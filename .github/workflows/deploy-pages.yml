@@ -30,13 +30,14 @@ jobs:
           node-version: 22
       - uses: actions/configure-pages@v5
       # Contenus publiés depuis l'administration (Supabase), puis génération du site.
-      # Sans les variables NR_SUPABASE_URL / NR_SUPABASE_ANON_KEY : contenus du dépôt,
-      # administration en mode démonstration.
+      # URL du projet et clé publishable : publiques par conception (la sécurité repose sur
+      # les règles d'accès de la base). Les variables de dépôt, si elles existent, priment.
+      # Ne JAMAIS mettre ici la clé secrète (sb_secret_...).
       - name: Construire le site
         working-directory: site
         env:
-          SUPABASE_URL: ${{ vars.NR_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.NR_SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ vars.NR_SUPABASE_URL || 'https://uguyaabdkxcdhlzgnaai.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ vars.NR_SUPABASE_ANON_KEY || 'sb_publishable_o79qTWfOhw7f3OYHnXuSIw_TUciAjzM' }}
           NR_TURNSTILE_SITE_KEY: ${{ vars.NR_TURNSTILE_SITE_KEY }}
         run: |
           node fetch-content.mjs

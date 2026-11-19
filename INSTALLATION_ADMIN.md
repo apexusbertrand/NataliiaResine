@@ -93,6 +93,8 @@ La fonction vérifie elle-même que l'appelant est administrateur. Elle n'a jama
 
 ## 6. Brancher le site
 
+Pour ce projet, l'URL et la clé publishable sont déjà inscrites dans `.github/workflows/deploy-pages.yml` (valeurs par défaut). Les variables ci-dessous ne servent que pour changer de projet sans modifier le workflow.
+
 GitHub, dépôt du site > Settings > Secrets and variables > Actions > onglet **Variables** (pas Secrets : ces valeurs sont publiques par conception) :
 
 - `NR_SUPABASE_URL` : Project URL ;
