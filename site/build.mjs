@@ -125,6 +125,7 @@ ${body}
   <div class="footer-bottom">
     <span>© ${new Date().getFullYear()} ${esc(site.nom)}</span>
     <span><a href="mentions-legales.html">Mentions légales</a> · <a href="confidentialite.html">Confidentialité</a></span>
+    <span class="credit">Conçu et mis en œuvre par Apexus : <a href="https://apexus.fr" target="_blank" rel="noopener">apexus.fr</a></span>
   </div>
 </footer>
 <script src="js/site.js" defer></script>

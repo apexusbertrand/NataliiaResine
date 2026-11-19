@@ -233,3 +233,5 @@ input[type=range]{width:100%;accent-color:var(--accent-dark)}
 body.sim-no-scroll{overflow:hidden}
 .sim-rotate{display:none;margin:0 0 6px}
 @media (orientation:portrait) and (max-width:700px){.sim-full .sim-rotate{display:block}}
+.footer-bottom .credit{flex-basis:100%;text-align:center;color:#8f8676}
+.footer-bottom .credit a{color:#c8c0b4;text-decoration:underline}
