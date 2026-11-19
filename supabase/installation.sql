@@ -287,6 +287,13 @@ create policy demandes_admin on storage.objects for all to authenticated
 grant usage on schema public to anon, authenticated;
 grant select on public.reglages, public.prestations, public.produits, public.realisations, public.avis to anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
+-- Rôle « service » (clé secrète, fonctions demande / purger / publier). Les projets Supabase
+-- récents ne l'accordent plus automatiquement aux nouvelles tables.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role, authenticated;
+grant execute on function public.is_admin() to service_role;
+grant execute on function public.purger_prospects() to service_role;
 grant execute on function public.is_admin() to anon, authenticated;
 revoke execute on function public.purger_prospects() from anon, authenticated;
 

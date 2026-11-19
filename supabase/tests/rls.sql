@@ -86,6 +86,17 @@ do $$ begin
 exception when check_violation then null;
 end $$;
 
+-- 3 bis. Rôle service (fonctions demande, purger, publier) : lecture et écriture partout
+set role service_role;
+insert into public.prospects (nom, email, telephone) values ('Service', 'service@test.fr', '0600000000');
+insert into public.demandes (prospect_id, consentement_at) select id, now() from public.prospects where email = 'service@test.fr';
+insert into public.publications (demandee_par) values ('test');
+do $$ begin
+  if (select count(*) from public.demandes) < 1 then raise exception 'service_role ne peut pas écrire les demandes'; end if;
+end $$;
+delete from public.prospects where email = 'service@test.fr';
+reset role;
+
 -- 4. Purge RGPD
 update public.prospects set dernier_contact = now() - interval '3 years 1 day';
 do $$ begin
