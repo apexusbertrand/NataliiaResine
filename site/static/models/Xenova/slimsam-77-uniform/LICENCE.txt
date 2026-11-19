@@ -1,0 +1,2 @@
+SlimSAM (Xenova/slimsam-77-uniform), version ONNX quantifiée de SlimSAM, dérivé de Segment Anything (Meta).
+Licence Apache 2.0. Source : https://huggingface.co/Xenova/slimsam-77-uniform

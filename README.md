@@ -17,6 +17,9 @@ Préversion : https://apexusbertrand.github.io/NataliiaResine/ (noindex). Admini
       static/            css, js, polices auto-hébergées, images optimisées
       static/js/sim-engine.js   moteur du simulateur (perspective, texture, lumière), sans DOM
       static/js/simulateur.js   interface du simulateur (page projet.html)
+      static/js/sim-detect-worker.js  détection automatique de la surface (SlimSAM, dans un worker)
+      static/vendor/transformers/     transformers.js 3.0.2 et moteur ONNX (Apache 2.0)
+      static/models/                  modèle Xenova/slimsam-77-uniform (Apache 2.0)
       tests/             tests du moteur : node --test tests/*.test.mjs
       tools/images.py    prépare les images depuis assets/maquette (Pillow)
       tools/seed.mjs     génère supabase/seed.sql depuis content/*.json

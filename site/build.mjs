@@ -396,7 +396,7 @@ pages['projet.html'] = layout({
 <section class="section" style="padding-top:0" id="sim-root">
   <ol class="sim-steps-intro">
     <li><strong>Votre photo</strong> : 1 ou 2 photos, cadrées sur la surface.</li>
-    <li><strong>La surface</strong> : placez des points tout autour.</li>
+    <li><strong>La surface</strong> : touchez-la, elle se détecte toute seule. Corrigez à la main si besoin.</li>
     <li><strong>La perspective</strong> : ajustez les 4 points dorés sur un rectangle au sol.</li>
     <li><strong>Le granulat</strong> : comparez avant et après, puis envoyez votre projet.</li>
   </ol>
@@ -422,11 +422,14 @@ pages['projet.html'] = layout({
       <div data-panel="zone">
         <p class="note" id="sim-hint"></p>
         <div class="sim-tools">
-          <button type="button" class="filter" data-mode="zone" aria-pressed="true">Contour de la surface</button>
+          <button type="button" class="filter" data-mode="auto" aria-pressed="true">✨ Détection automatique</button>
+          <button type="button" class="filter" data-mode="autoNeg" aria-pressed="false">Retirer une partie détectée</button>
+          <button type="button" class="filter" data-mode="zone" aria-pressed="false">Contour à la main</button>
           <button type="button" class="filter" data-mode="excl" aria-pressed="false">Exclure un objet</button>
           <button type="button" class="filter" id="sim-undo">Annuler le dernier point</button>
           <button type="button" class="filter" id="sim-clear">Tout effacer</button>
         </div>
+        <p class="note">Détection réalisée sur votre appareil : la photo n’est envoyée nulle part. Premier usage : téléchargement d’environ 36 Mo, une seule fois.</p>
         <button type="button" class="btn" id="sim-next1">Étape suivante : perspective</button>
       </div>
 

@@ -1,8 +1,8 @@
 # Nataliia Résine : cahier des charges du site web
 
-Version 0.8, 19 novembre 2026. Document de cadrage, rien n'est encore développé.
+Version 0.9, 19 novembre 2026. Document de cadrage, rien n'est encore développé.
 
-Historique : 0.1 première version à partir de la maquette. 0.2 intègre les réponses de la cliente aux questions 1 à 18 et les données légales (Insee, RNE au 17/11/2026). 0.3 intègre les réponses 19 à 21 (administration). 0.4 intègre les réponses 29 à 32 (domaine, e-mail, Wix, délai) et ajoute un planning daté. 0.5 intègre les réponses 22 à 28 (produits, simulateur, dossiers prospects, RGPD) : nouvelle architecture avec un service de données privé (chapitre 6). 0.6 : validation des points A12 à A15 et de l'architecture recommandée (P1). 0.7 : lot 1 en ligne, lot 2 réalisé (7.6). 0.8 : lot 3a réalisé (8.10).
+Historique : 0.1 première version à partir de la maquette. 0.2 intègre les réponses de la cliente aux questions 1 à 18 et les données légales (Insee, RNE au 17/11/2026). 0.3 intègre les réponses 19 à 21 (administration). 0.4 intègre les réponses 29 à 32 (domaine, e-mail, Wix, délai) et ajoute un planning daté. 0.5 intègre les réponses 22 à 28 (produits, simulateur, dossiers prospects, RGPD) : nouvelle architecture avec un service de données privé (chapitre 6). 0.6 : validation des points A12 à A15 et de l'architecture recommandée (P1). 0.7 : lot 1 en ligne, lot 2 réalisé (7.6). 0.8 : lot 3a réalisé (8.10). 0.9 : lot 3b réalisé (8.11), projet déplacé dans le dépôt NataliiaResine.
 
 Sources utilisées, et uniquement elles :
 
@@ -355,6 +355,16 @@ Livré : `site/static/js/sim-engine.js` (moteur), `site/static/js/simulateur.js`
 - Tests : moteur (10 tests Node), fonctions (11 tests Deno contre de faux services), parcours complet dans Chromium sur téléphone jusqu'au dossier dans l'administration.
 - En préversion, sans Supabase : la demande est déposée dans l'administration de démonstration du même navigateur, aucun e-mail ne part.
 - Limites : la qualité dépend des textures fournies (voir 8.9) ; la zone se trace à la main (la détection automatique est le lot 3b).
+
+### 8.11 Réalisation (lot 3b, 19 novembre 2026)
+
+Détection automatique de la surface, sur l'appareil du visiteur.
+
+- Le visiteur touche la surface (1 à 3 fois) : le modèle SlimSAM (version allégée de Segment Anything, licence Apache 2.0) trouve le contour. « Retirer une partie détectée » enlève une zone en trop ; « Contour à la main » et « Exclure un objet » restent disponibles et se combinent avec la détection.
+- Modèle (14 Mo), moteur de calcul (22 Mo) et bibliothèque transformers.js 3.0.2 sont hébergés avec le site : aucune requête vers un tiers, la photo ne quitte pas l'appareil. Téléchargement seulement si le visiteur utilise la détection, une seule fois (cache du navigateur).
+- Calcul dans un worker (la page ne se fige pas). Mesuré dans Chromium : 12 à 13 s pour la première touche (téléchargement local et analyse), 0,5 s pour les suivantes. Sur un téléphone d'entrée de gamme, l'analyse peut prendre plus longtemps : un message l'indique.
+- Testé sur une photo de rue pavée (Riquewihr) : chaussée détectée jusqu'au fond, passants, terrasse et herbe exclus sans intervention.
+- Repli : si l'appareil ne sait pas exécuter le modèle, message et passage au contour à la main.
 
 ## 9. Planning
 

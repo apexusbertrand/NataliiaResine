@@ -213,7 +213,7 @@ a.card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 
 #sim-drop.is-over{border-color:var(--accent-dark);background:#efe4cf}
 [hidden]{display:none!important}
 .sim-stepbar{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 10px}
-.sim-canvas-wrap{position:relative;width:100%;background:#000;border:1px solid var(--line)}
+.sim-canvas-wrap{position:relative;width:100%;background:#000;border:1px solid var(--line);display:flex;justify-content:center}
 #sim-canvas{display:block;touch-action:none;cursor:crosshair;max-width:100%}
 .sim-tools{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
 .sim-tools .filter,.sim-stepbar .filter{font-size:13px}

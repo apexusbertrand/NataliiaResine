@@ -34,6 +34,8 @@ async function loadPhoto(file) {
     name: file.name, W, H, canvas: c, src: img.data,
     lum: luminance(img.data, W, H),
     zone: [], excl: [], quad: null, quadTouched: false, rectM: 2,
+    uid: Math.random().toString(36).slice(2),
+    auto: { points: [], labels: [], mask: null, bbox: null, overlay: null },
     granulat: (DATA.preselect && DATA.granulats.find((g) => g.id === DATA.preselect)?.id) || DATA.granulats[0]?.id,
     out: null, beforeUrl: c.toDataURL('image/jpeg', 0.85), afterUrl: null,
   };
@@ -58,17 +60,27 @@ async function texture(id) {
 }
 
 // ---------------------------------------------------------------------------
+// Zone : détection automatique (masque) et/ou contour à la main (polygone), moins les objets exclus
+const hasZone = (p) => p.zone.length >= 3 || !!p.auto.mask;
+function zonePoints(p) {
+  const pts = p.zone.length >= 3 ? [...p.zone] : [];
+  const b = p.auto.bbox;
+  if (b) pts.push([b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]);
+  return pts;
+}
+
 // Rendu
 function buildMask(p) {
   const c = canvas(p.W, p.H); const ctx = c.getContext('2d');
   const poly = (pts) => { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.fill(); };
+  if (p.auto.mask) ctx.drawImage(p.auto.overlay, 0, 0); // masque détecté (couche opaque là où il y a la surface)
   ctx.fillStyle = '#fff';
   if (p.zone.length >= 3) poly(p.zone);
   ctx.globalCompositeOperation = 'destination-out';
   p.excl.filter((e) => e.length >= 3).forEach(poly);
   const d = ctx.getImageData(0, 0, p.W, p.H).data;
   const m = new Uint8Array(p.W * p.H);
-  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3];
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 0 ? 255 : 0;
   return feather(m, p.W, p.H, Math.max(1, Math.round(p.W / 800)));
 }
 
@@ -79,11 +91,12 @@ async function doRender() {
   const p = cur();
   if (!p) return;
   const status = $('#sim-status');
-  if (p.zone.length < 3) { p.afterUrl = null; status.textContent = 'Délimitez d’abord la surface (étape 1).'; showResult(); return; }
-  if (!p.quadTouched) p.quad = defaultQuad(p.zone, p.W, p.H);
+  if (!hasZone(p)) { p.afterUrl = null; status.textContent = 'Délimitez d’abord la surface (étape 1).'; showResult(); return; }
+  if (!p.quadTouched) p.quad = defaultQuad(zonePoints(p), p.W, p.H);
   if (!quadOk(p.quad)) { status.textContent = 'Les 4 points de perspective se croisent : déplacez-les (étape 2).'; return; }
   if (!p.granulat) { status.textContent = 'Choisissez un granulat.'; return; }
-  status.textContent = 'Calcul du rendu…';
+  const talk = state.step !== 'zone'; // à l'étape Surface, on garde les consignes de détection
+  if (talk) status.textContent = 'Calcul du rendu…';
   try {
     const tex = await texture(p.granulat);
     const out = new Uint8ClampedArray(p.src.length);
@@ -96,7 +109,7 @@ async function doRender() {
     p.out = c;
     p.afterUrl = c.toDataURL('image/jpeg', 0.85);
     const g = DATA.granulats.find((x) => x.id === p.granulat);
-    status.textContent = `Rendu avec ${g.nom}.`;
+    if (talk) status.textContent = `Rendu avec ${g.nom}.`;
     showResult();
     if (state.step === 'granulat') draw();
   } catch (e) {
@@ -114,8 +127,12 @@ function draw() {
   const p = cur(); const c = view();
   if (!p) return;
   let cssW = c.parentElement.clientWidth;
-  // Plein écran : la photo tient dans la hauteur disponible, outils compris
-  if (state.full) cssW = Math.min(cssW, Math.max(200, (window.innerHeight - 64) * p.W / p.H));
+  // La photo tient dans la hauteur de l'écran (sinon le bas d'une photo en hauteur est hors d'atteinte)
+  // Plein écran : on retire la hauteur réellement occupée au-dessus de la photo (barre d'étapes, astuce)
+  const reserve = state.full
+    ? c.parentElement.getBoundingClientRect().top - $('#sim-editor').getBoundingClientRect().top + 16
+    : 150;
+  cssW = Math.min(cssW, Math.max(120, (window.innerHeight - reserve) * p.W / p.H));
   scale = cssW / p.W;
   const dpr = window.devicePixelRatio || 1;
   c.style.width = cssW + 'px'; c.style.height = Math.round(p.H * scale) + 'px';
@@ -128,6 +145,14 @@ function draw() {
   const dots = (pts, fill) => pts.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = lw; ctx.strokeStyle = '#fff'; ctx.stroke(); });
 
   if (state.step === 'zone') {
+    if (p.auto.mask) { ctx.globalAlpha = 0.45; ctx.drawImage(p.auto.tint, 0, 0); ctx.globalAlpha = 1; }
+    p.auto.points.forEach(([x, y], i) => {
+      ctx.beginPath(); ctx.arc(x, y, r * 1.1, 0, 7);
+      ctx.fillStyle = p.auto.labels[i] ? '#2f8f4e' : '#a3312a'; ctx.fill();
+      ctx.lineWidth = lw; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = `bold ${r * 1.6}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.auto.labels[i] ? '+' : '−', x, y + r * 0.05);
+    });
     if (p.zone.length) {
       polyPath(p.zone); ctx.fillStyle = 'rgba(210,178,123,.28)'; if (p.zone.length > 2) ctx.fill();
       ctx.lineWidth = lw * 1.5; ctx.strokeStyle = '#d2b27b'; ctx.stroke();
@@ -142,7 +167,7 @@ function draw() {
   }
   if (state.step === 'persp') {
     if (p.zone.length > 2) { polyPath(p.zone); ctx.lineWidth = lw; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.setLineDash([6 / scale, 6 / scale]); ctx.stroke(); ctx.setLineDash([]); }
-    if (!p.quadTouched) p.quad = defaultQuad(p.zone, p.W, p.H);
+    if (!p.quadTouched) p.quad = defaultQuad(zonePoints(p), p.W, p.H);
     const Hm = quadOk(p.quad) ? homography(p.quad) : null;
     const Hi = Hm && invert3(Hm);
     if (Hi) {
@@ -188,7 +213,7 @@ function onDown(e) {
     if (i >= 0) { drag = { list: p.quad, i }; p.quadTouched = true; view().setPointerCapture(e.pointerId); }
     return;
   }
-  const lists = [p.zone, ...p.excl];
+  const lists = state.mode.startsWith('auto') ? [] : [p.zone, ...p.excl];
   for (const list of lists) {
     const i = hit(list, x, y);
     if (i >= 0) { drag = { list, i }; view().setPointerCapture(e.pointerId); return; }
@@ -206,6 +231,11 @@ function onUp(e) {
   const p = cur();
   if (drag?.add && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) {
     const [x, y] = toImage(e);
+    if (state.mode === 'auto' || state.mode === 'autoNeg') {
+      drag = null;
+      autoTap(p, x, y, state.mode === 'auto' ? 1 : 0);
+      return;
+    }
     if (state.mode === 'excl') {
       if (!p.excl.length) p.excl.push([]);
       p.excl[p.excl.length - 1].push([x, y]);
@@ -222,19 +252,107 @@ function setStep(step) {
   state.step = step;
   document.querySelectorAll('[data-step]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.step === step)));
   document.querySelectorAll('[data-panel]').forEach((el) => { el.hidden = el.dataset.panel !== step; });
-  if (step === 'persp') { const p = cur(); if (p && !p.quadTouched) p.quad = defaultQuad(p.zone, p.W, p.H); }
+  if (step === 'persp') { const p = cur(); if (p && !p.quadTouched) p.quad = defaultQuad(zonePoints(p), p.W, p.H); }
   draw();
   if (step === 'granulat') doRender();
 }
 
+// ---------------------------------------------------------------------------
+// Détection automatique (worker + modèle SlimSAM hébergés avec le site)
+const detectOk = typeof Worker !== 'undefined' && typeof WebAssembly === 'object';
+let worker = null; let reqSeq = 0; let embeddedUid = null; let detectSeq = 0;
+const waiting = new Map();
+function detector() {
+  if (worker) return worker;
+  worker = new Worker(new URL('./sim-detect-worker.js', import.meta.url), { type: 'module' });
+  worker.onmessage = (e) => {
+    const m = e.data;
+    if (m.type === 'progress') {
+      if (m.phase === 'analyse') { $('#sim-status').textContent = 'Analyse de la photo… (10 à 20 secondes la première fois)'; return; }
+      const mo = (n) => Math.round(n / 1e6);
+      $('#sim-status').textContent = `Téléchargement du détecteur : ${mo(m.loaded)} / ${mo(m.total)} Mo (une seule fois, Wi-Fi conseillé)…`;
+      return;
+    }
+    const w = waiting.get(m.req);
+    if (!w) return;
+    waiting.delete(m.req);
+    if (m.type === 'error') w.ko(new Error(m.message)); else w.ok(m);
+  };
+  worker.onerror = (e) => { waiting.forEach((w) => w.ko(new Error(e.message || 'worker'))); waiting.clear(); worker = null; embeddedUid = null; };
+  return worker;
+}
+function ask(msg, transfer = []) {
+  return new Promise((ok, ko) => { const req = ++reqSeq; waiting.set(req, { ok, ko }); detector().postMessage({ ...msg, req }, transfer); });
+}
+
+function setAutoMask(p, mask) {
+  p.auto.mask = mask;
+  if (!mask) { p.auto.bbox = null; p.auto.overlay = null; p.auto.tint = null; return; }
+  const W = p.W; const H = p.H;
+  const solid = new ImageData(W, H); const tint = new ImageData(W, H);
+  let x0 = W; let y0 = H; let x1 = -1; let y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (!mask[i]) continue;
+    const j = i * 4;
+    solid.data[j] = solid.data[j + 1] = solid.data[j + 2] = solid.data[j + 3] = 255;
+    tint.data[j] = 241; tint.data[j + 1] = 200; tint.data[j + 2] = 121; tint.data[j + 3] = 255;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  const a = canvas(W, H); a.getContext('2d').putImageData(solid, 0, 0);
+  const b = canvas(W, H); b.getContext('2d').putImageData(tint, 0, 0);
+  p.auto.overlay = a; p.auto.tint = b;
+  p.auto.bbox = x1 >= 0 ? [x0, y0, x1, y1] : null;
+  if (x1 < 0) p.auto.mask = null;
+}
+
+async function runDetect(p) {
+  const my = ++detectSeq;
+  const status = $('#sim-status');
+  if (!p.auto.points.length) { setAutoMask(p, null); draw(); scheduleRender(); return; }
+  try {
+    if (embeddedUid !== p.uid) {
+      status.textContent = 'Préparation du détecteur…';
+      await ask({ type: 'embed', id: p.uid, rgba: p.src.slice().buffer, W: p.W, H: p.H });
+      embeddedUid = p.uid;
+    }
+    status.textContent = 'Détection de la surface…';
+    const r = await ask({ type: 'decode', id: p.uid, points: p.auto.points, labels: p.auto.labels });
+    if (my !== detectSeq) return; // une touche plus récente est en cours
+    setAutoMask(p, r.mask);
+    status.textContent = p.auto.mask
+      ? 'Surface détectée. Touchez une partie oubliée pour l’ajouter, ou passez en « Retirer » pour enlever une partie en trop.'
+      : 'Rien de détecté à cet endroit. Touchez plutôt le milieu de la surface.';
+    draw();
+    scheduleRender();
+  } catch (e) {
+    console.error(e);
+    embeddedUid = null;
+    status.textContent = 'Détection automatique indisponible sur cet appareil. Utilisez « Contour à la main ».';
+    p.auto.points.pop(); p.auto.labels.pop();
+    setMode('zone');
+    draw();
+  }
+}
+
+function autoTap(p, x, y, label) {
+  p.auto.points.push([x, y]); p.auto.labels.push(label);
+  draw();
+  runDetect(p);
+}
+
 function setMode(mode) {
+  if (mode.startsWith('auto') && !detectOk) mode = 'zone';
   state.mode = mode;
   const p = cur();
   if (mode === 'excl' && p && (!p.excl.length || p.excl[p.excl.length - 1].length >= 3)) p.excl.push([]);
   document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
-  $('#sim-hint').textContent = mode === 'excl'
-    ? 'Touchez l’image autour de l’objet à ne pas recouvrir (pot, meuble, bordure…).'
-    : 'Touchez l’image pour placer des points tout autour de la surface à recouvrir. Faites glisser un point pour le corriger.';
+  $('#sim-hint').textContent = {
+    auto: 'Touchez la surface à recouvrir : elle se détecte toute seule. Une 2ᵉ ou 3ᵉ touche ajoute une partie oubliée.',
+    autoNeg: 'Touchez une partie détectée en trop (mur, marche, objet) pour la retirer.',
+    excl: 'Touchez l’image autour de l’objet à ne pas recouvrir (pot, meuble, bordure…).',
+    zone: 'Touchez l’image pour placer des points tout autour de la surface à recouvrir. Faites glisser un point pour le corriger.',
+  }[mode];
 }
 
 function renderTabs() {
@@ -286,10 +404,10 @@ function refresh() {
   $('#rect-m').value = p.rectM;
   $('#rect-out').textContent = `${p.rectM.toLocaleString('fr-FR')} m`;
   renderSwatches();
-  setStep(p.zone.length >= 3 ? state.step : 'zone');
-  setMode('zone');
+  setStep(hasZone(p) ? state.step : 'zone');
+  setMode(detectOk && !p.zone.length ? 'auto' : 'zone');
   showResult();
-  if (p.zone.length >= 3) doRender();
+  if (hasZone(p)) doRender();
 }
 
 async function addFiles(files) {
@@ -424,15 +542,17 @@ function init() {
   $('#sim-undo').addEventListener('click', () => {
     const p = cur();
     const ex = p.excl[p.excl.length - 1];
+    if (state.mode.startsWith('auto')) { p.auto.points.pop(); p.auto.labels.pop(); draw(); runDetect(p); return; }
     if (state.mode === 'excl' && ex?.length) ex.pop(); else p.zone.pop();
     draw(); scheduleRender();
   });
   $('#sim-clear').addEventListener('click', () => {
     const p = cur(); p.zone = []; p.excl = []; p.quadTouched = false; p.out = null; p.afterUrl = null;
-    setMode('zone'); draw(); showResult();
+    p.auto.points = []; p.auto.labels = []; setAutoMask(p, null); detectSeq++;
+    setMode(detectOk ? 'auto' : 'zone'); draw(); showResult();
   });
   $('#sim-next1').addEventListener('click', () => {
-    if (cur().zone.length < 3) { $('#sim-hint').textContent = 'Placez au moins 3 points autour de la surface.'; return; }
+    if (!hasZone(cur())) { $('#sim-hint').textContent = 'Touchez la surface pour la détecter, ou placez au moins 3 points autour.'; return; }
     setStep('persp');
   });
   $('#sim-next2').addEventListener('click', () => setStep('granulat'));
