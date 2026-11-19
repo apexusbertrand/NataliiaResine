@@ -28,6 +28,10 @@ Préversion : https://apexusbertrand.github.io/NataliiaResine/ (noindex). Admini
     supabase/
       schema.sql         tables, droits (RLS), historique, stockage
       seed.sql           données initiales
+      installation.sql   schema.sql + seed.sql en un fichier, à coller dans l'éditeur SQL
+                         (à régénérer après modification : cat schema.sql seed.sql)
+      apres-invitation.sql  donne l'accès admin à un compte invité
+      deployer.sh        déploie les fonctions et leurs réglages non secrets
       functions/publier  fonction qui déclenche la publication
       functions/demande  réception des demandes du simulateur (photos privées, dossier, e-mails)
       functions/purger   purge RGPD à 3 ans, photos comprises

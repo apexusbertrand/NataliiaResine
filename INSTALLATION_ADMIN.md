@@ -25,12 +25,7 @@ Le site public reste 100 % statique. Les photos du site sont servies depuis le s
 
 ## 2. Créer la base
 
-SQL Editor, coller puis exécuter dans l'ordre :
-
-1. `supabase/schema.sql` (tables, règles d'accès, historique, buckets de stockage) ;
-2. `supabase/seed.sql` (prestations et produits d'exemple du lot 1).
-
-Les deux scripts sont relançables sans perte de données. Ils sont testés sur Postgres 16 avec `supabase/tests/run.sh` (droits visiteur, compte non admin, admin, contraintes, purge RGPD).
+SQL Editor > New query : coller tout le contenu de `supabase/installation.sql`, puis « Run ». Il regroupe `schema.sql` (tables, droits, historique, stockage) et `seed.sql` (prestations et produits d'exemple). Relançable sans perte de données.
 
 La purge RGPD automatique est décrite à l'étape 8 (elle passe par une fonction, qui efface aussi les photos).
 
@@ -53,7 +48,7 @@ Mot de passe : Authentication > Providers > Email, longueur minimale 10 caractè
 ## 4. Créer le compte de la cliente
 
 1. Authentication > Users > « Invite user » : e-mail de la cliente. Elle reçoit un lien pour choisir son mot de passe.
-2. Lui donner l'accès à l'administration (SQL Editor) :
+2. Lui donner l'accès à l'administration : coller `supabase/apres-invitation.sql` dans SQL Editor (adresse à adapter), ou :
 
 ```sql
 insert into public.admins (user_id, email)
@@ -62,7 +57,13 @@ select id, email from auth.users where email = 'adresse@de-la-cliente.fr';
 
 Même procédure plus tard pour un deuxième utilisateur. Pour retirer un accès : supprimer la ligne dans `admins` (et l'utilisateur dans Auth).
 
-## 5. Fonction « publier »
+## 5. Fonctions (raccourci)
+
+`bash supabase/deployer.sh <ref-du-projet>` depuis la racine du dépôt, sur un ordinateur avec Node.js : connexion à Supabase, réglages non secrets, déploiement des 3 fonctions et génération du secret de purge. Il affiche à la fin la requête pg_cron de l'étape 8. Restent à saisir à la main, dans Supabase > Edge Functions > Secrets : `GITHUB_TOKEN` (ci-dessous), puis `BREVO_API_KEY` et `TURNSTILE_SECRET` (étape 7).
+
+Le détail, si on préfère faire les étapes une par une, suit.
+
+## 5 bis. Fonction « publier »
 
 Jeton GitHub à grain fin (github.com > Settings > Developer settings > Fine-grained tokens) :
 
