@@ -165,6 +165,12 @@ function draw() {
       dots(e, '#a3312a');
     });
   }
+  if (state.step === 'zone' && state.busy) {
+    const bh = 44 / scale;
+    ctx.fillStyle = 'rgba(17,16,15,.78)'; ctx.fillRect(0, p.H / 2 - bh / 2, p.W, bh);
+    ctx.fillStyle = '#f1c879'; ctx.font = `600 ${16 / scale}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Détection en cours…', p.W / 2, p.H / 2);
+  }
   if (state.step === 'persp') {
     if (p.zone.length > 2) { polyPath(p.zone); ctx.lineWidth = lw; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.setLineDash([6 / scale, 6 / scale]); ctx.stroke(); ctx.setLineDash([]); }
     if (!p.quadTouched) p.quad = defaultQuad(zonePoints(p), p.W, p.H);
@@ -229,7 +235,7 @@ function onMove(e) {
 }
 function onUp(e) {
   const p = cur();
-  if (drag?.add && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 8) {
+  if (drag?.add && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 20) {
     const [x, y] = toImage(e);
     if (state.mode === 'auto' || state.mode === 'autoNeg') {
       drag = null;
@@ -240,6 +246,7 @@ function onUp(e) {
       if (!p.excl.length) p.excl.push([]);
       p.excl[p.excl.length - 1].push([x, y]);
     } else p.zone.push([x, y]);
+    syncLocks();
     draw();
     scheduleRender();
   } else if (drag && !drag.add) scheduleRender();
@@ -249,7 +256,24 @@ function onUp(e) {
 // ---------------------------------------------------------------------------
 // Interface
 function setStep(step) {
+  // Étapes 2 et 3 seulement une fois la surface délimitée
+  const p0 = cur();
+  if (step !== 'zone' && p0 && !hasZone(p0)) {
+    step = 'zone';
+    $('#sim-hint').innerHTML = '<strong>Commencez ici :</strong> touchez sur la photo la surface à recouvrir (terrasse, allée, marches). Elle se colore quand elle est détectée.';
+    $('#sim-status').textContent = '';
+  }
   state.step = step;
+  const locked = p0 && !hasZone(p0);
+  $('#sim-lead').textContent = {
+    zone: locked ? '👆 Touchez sur la photo la surface à recouvrir : elle se colore quand elle est détectée.' : '✓ Surface délimitée. Corrigez si besoin, puis passez à l’étape 2.',
+    persp: '👆 Placez les 4 points dorés sur les coins d’un rectangle au sol (dalles, marche, bordure).',
+    granulat: '👇 Choisissez un granulat sous la photo : le rendu se calcule tout seul.',
+  }[step];
+  document.querySelectorAll('[data-step]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.step === step));
+    b.classList.toggle('is-locked', b.dataset.step !== 'zone' && !(p0 && hasZone(p0)));
+  });
   document.querySelectorAll('[data-step]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.step === step)));
   document.querySelectorAll('[data-panel]').forEach((el) => { el.hidden = el.dataset.panel !== step; });
   if (step === 'persp') { const p = cur(); if (p && !p.quadTouched) p.quad = defaultQuad(zonePoints(p), p.W, p.H); }
@@ -285,6 +309,11 @@ function ask(msg, transfer = []) {
   return new Promise((ok, ko) => { const req = ++reqSeq; waiting.set(req, { ok, ko }); detector().postMessage({ ...msg, req }, transfer); });
 }
 
+function syncLocks() {
+  const p = cur();
+  document.querySelectorAll('[data-step]').forEach((b) => b.classList.toggle('is-locked', b.dataset.step !== 'zone' && !(p && hasZone(p))));
+}
+
 function setAutoMask(p, mask) {
   p.auto.mask = mask;
   if (!mask) { p.auto.bbox = null; p.auto.overlay = null; p.auto.tint = null; return; }
@@ -304,12 +333,15 @@ function setAutoMask(p, mask) {
   p.auto.overlay = a; p.auto.tint = b;
   p.auto.bbox = x1 >= 0 ? [x0, y0, x1, y1] : null;
   if (x1 < 0) p.auto.mask = null;
+  syncLocks();
+  if (state.step === 'zone') $('#sim-lead').textContent = p.auto.mask ? '✓ Surface détectée. Touchez une partie oubliée pour l’ajouter, puis passez à l’étape 2.' : '👆 Touchez sur la photo la surface à recouvrir : elle se colore quand elle est détectée.';
 }
 
 async function runDetect(p) {
   const my = ++detectSeq;
+  state.busy = true; draw();
   const status = $('#sim-status');
-  if (!p.auto.points.length) { setAutoMask(p, null); draw(); scheduleRender(); return; }
+  if (!p.auto.points.length) { state.busy = false; setAutoMask(p, null); draw(); scheduleRender(); return; }
   try {
     if (embeddedUid !== p.uid) {
       status.textContent = 'Préparation du détecteur…';
@@ -319,6 +351,7 @@ async function runDetect(p) {
     status.textContent = 'Détection de la surface…';
     const r = await ask({ type: 'decode', id: p.uid, points: p.auto.points, labels: p.auto.labels });
     if (my !== detectSeq) return; // une touche plus récente est en cours
+    state.busy = false;
     setAutoMask(p, r.mask);
     status.textContent = p.auto.mask
       ? 'Surface détectée. Touchez une partie oubliée pour l’ajouter, ou passez en « Retirer » pour enlever une partie en trop.'
@@ -327,6 +360,7 @@ async function runDetect(p) {
     scheduleRender();
   } catch (e) {
     console.error(e);
+    state.busy = false;
     embeddedUid = null;
     status.textContent = 'Détection automatique indisponible sur cet appareil. Utilisez « Contour à la main ».';
     p.auto.points.pop(); p.auto.labels.pop();
@@ -382,7 +416,10 @@ function showResult() {
   const p = cur();
   const box = $('#sim-result');
   if (!p || !p.afterUrl) { box.hidden = true; return; }
+  const first = box.hidden;
   box.hidden = false;
+  // Premier rendu à l'étape Granulat : on amène le visiteur sur le résultat
+  if (first && state.step === 'granulat' && !state.full) setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   $('#cmp-before').src = p.beforeUrl;
   $('#cmp-after').src = p.afterUrl;
   const cmp = $('#sim-compare');
@@ -556,6 +593,12 @@ function init() {
     setStep('persp');
   });
   $('#sim-next2').addEventListener('click', () => setStep('granulat'));
+  $('#sim-see').addEventListener('click', () => {
+    const box = $('#sim-result');
+    if (state.full) $('#sim-full').click();
+    if (!box.hidden) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else doRender();
+  });
   $('#sim-reset-persp').addEventListener('click', () => { const p = cur(); p.quadTouched = false; draw(); scheduleRender(); });
   $('#rect-m').addEventListener('input', (e) => {
     const p = cur(); p.rectM = +e.target.value;

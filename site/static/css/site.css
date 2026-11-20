@@ -235,3 +235,8 @@ body.sim-no-scroll{overflow:hidden}
 @media (orientation:portrait) and (max-width:700px){.sim-full .sim-rotate{display:block}}
 .footer-bottom .credit{flex-basis:100%;text-align:center;color:#8f8676}
 .footer-bottom .credit a{color:#c8c0b4;text-decoration:underline}
+.sim-stepbar .filter.is-locked{opacity:.45}
+.sim-lead{margin:4px 0 10px;padding:10px 12px;background:#f3ead8;border-left:3px solid var(--accent);font-size:15px;font-weight:500;color:#3d3122}
+.sim-full .sim-lead{background:#2a241c;color:#f3e6cc}
+.sim-status{margin:0 0 8px;font-size:14px;color:#5b4a33;min-height:1.2em}
+.sim-full .sim-status{color:#e8dcc6}

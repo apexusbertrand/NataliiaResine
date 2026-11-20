@@ -415,9 +415,10 @@ pages['projet.html'] = layout({
         <button type="button" class="filter" data-step="granulat" aria-pressed="false">3. Granulat</button>
         <button type="button" class="filter sim-full-btn" id="sim-full" aria-pressed="false">⤢ Plein écran</button>
       </div>
+      <p class="sim-lead" id="sim-lead" aria-live="polite"></p>
       <p class="note sim-rotate">Astuce : tournez votre téléphone à l’horizontale pour agrandir la photo.</p>
+      <p class="sim-status" id="sim-status" aria-live="polite"></p>
       <div class="sim-canvas-wrap"><canvas id="sim-canvas" aria-label="Votre photo : touchez pour placer des points"></canvas></div>
-      <p class="note" id="sim-status" aria-live="polite"></p>
 
       <div data-panel="zone">
         <p class="note" id="sim-hint"></p>
@@ -441,7 +442,9 @@ pages['projet.html'] = layout({
       </div>
 
       <div data-panel="granulat" hidden>
+        <p class="note">Choisissez un granulat : le rendu se met à jour tout seul.</p>
         <div class="swatches" id="sim-swatches"></div>
+        <button type="button" class="btn" id="sim-see">Voir l’avant / après ↓</button>
       </div>
     </div>
   </div>
