@@ -165,3 +165,14 @@ Chaque nuit, les dossiers sans contact depuis 3 ans (sauf statut « Signé ») s
 - **Jeton GitHub** : expire au bout d'un an. Symptôme : « La publication n'a pas pu être lancée ». Le renouveler puis `supabase secrets set GITHUB_TOKEN=...`.
 - **Nom de domaine** : au changement d'adresse, mettre à jour `url` dans `site/content/site.json`, la Site URL et les Redirect URLs Supabase.
 - **Sauvegardes** : l'offre gratuite n'a pas de sauvegarde à un instant donné. Exporter la base de temps en temps (Database > Backups, ou `pg_dump`). L'historique des modifications permet déjà d'annuler une erreur de saisie.
+
+## Mise en ligne pour Google (le jour du nom de domaine)
+
+Le site est optimisé pour le référencement (audit Lighthouse mobile, copie sans préversion : 100 en SEO, accessibilité et bonnes pratiques, 99 à 100 en performance). Il reste fermé aux moteurs tant que `preversion` vaut `true`.
+
+1. `site/content/site.json` : `url` = adresse définitive (avec `/` final), `preversion` = `false`, `reseaux` = liens Instagram, Facebook, fiche Google (A2).
+2. Google Search Console : ajouter le domaine. Pour la vérification par balise HTML, copier le code dans `googleVerification` de `site.json`. Puis soumettre `https://<domaine>/sitemap.xml`.
+3. Fiche Google Business Profile (business.google.com), au nom de Nataliia Résine : catégorie de type entreprise de revêtements de sol, zone desservie (Somain, Douai, Valenciennes, Lille, Arras), adresse masquée, téléphone, lien vers le site, photos de chantiers. C'est le premier levier pour apparaître sur « moquette de pierre Douai ».
+4. Demander aux clients satisfaits un avis sur la fiche Google.
+
+Ce qui est en place : titres et descriptions par page avec mots-clés et villes, titre principal (H1) sur chaque page, données structurées (entreprise locale, zone desservie, 8 services, site, fil d'Ariane), balises de partage (Open Graph), adresse canonique, plan du site daté sans les pages exclues. Produits d'exemple, mentions légales, confidentialité et page 404 sont exclus de l'index.

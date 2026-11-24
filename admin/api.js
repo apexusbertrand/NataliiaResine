@@ -353,7 +353,9 @@ class DemoApi {
 
 export async function createApi() {
   const cfg = window.NR_CONFIG || {};
-  if (cfg.supabaseUrl && cfg.supabaseAnonKey) return new SupabaseApi(cfg.supabaseUrl.replace(/\/$/, ''), cfg.supabaseAnonKey);
+  // ?demo dans l'adresse : démonstration forcée (pour faire essayer l'interface sans compte ni base)
+  const demo = new URLSearchParams(location.search).has('demo');
+  if (!demo && cfg.supabaseUrl && cfg.supabaseAnonKey) return new SupabaseApi(cfg.supabaseUrl.replace(/\/$/, ''), cfg.supabaseAnonKey);
   const api = new DemoApi();
   await api.init();
   return api;

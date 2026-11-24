@@ -52,21 +52,47 @@ const nav = [
   ['contact.html', 'Contact'],
 ];
 
-const jsonLd = () => JSON.stringify({
+// Données structurées (schema.org) : entreprise locale intervenant sur une zone, ses services
+const [cp, ...villeSiege] = (site.legal.adresse.match(/(\d{5})\s+(.+)$/) || []).slice(1);
+const jsonLd = () => JSON.stringify([
+  {
+    '@context': 'https://schema.org',
+    '@type': 'HomeAndConstructionBusiness',
+    '@id': site.url + '#entreprise',
+    name: site.nom,
+    description: site.description,
+    url: site.url,
+    logo: site.url + 'img/logo-640.jpg',
+    image: site.url + 'img/partage.jpg',
+    telephone: site.contact.telephoneLien,
+    email: site.contact.email,
+    // Commune de rattachement seulement : la rue n'est pas affichée (choix de la cliente)
+    address: { '@type': 'PostalAddress', addressLocality: villeSiege.join(' ') || 'Somain', postalCode: cp || '59490', addressRegion: 'Hauts-de-France', addressCountry: 'FR' },
+    areaServed: site.zone.map((v) => ({ '@type': 'City', name: v })),
+    ...(site.reseaux?.length ? { sameAs: site.reseaux } : {}),
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Revêtements en moquette de pierre',
+      itemListElement: prestations.map((p) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', name: `${p.titre} en moquette de pierre`, description: p.resume, url: `${site.url}prestations.html#${p.id}` },
+      })),
+    },
+  },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: site.nom, url: site.url, inLanguage: 'fr-FR', publisher: { '@id': site.url + '#entreprise' } },
+]);
+const breadcrumbLd = (crumbs) => JSON.stringify({
   '@context': 'https://schema.org',
-  '@type': 'HomeAndConstructionBusiness',
-  name: site.nom,
-  description: site.description,
-  url: site.url,
-  logo: site.url + 'img/logo-640.jpg',
-  image: site.url + 'img/partage.jpg',
-  telephone: site.contact.telephoneLien,
-  email: site.contact.email,
-  areaServed: site.zone.map((v) => ({ '@type': 'City', name: v })),
+  '@type': 'BreadcrumbList',
+  itemListElement: [['Accueil', ''], ...crumbs].map(([name, f], i) => ({ '@type': 'ListItem', position: i + 1, name, item: site.url + f })),
 });
+const noindexPages = new Set(['404.html']);
 
-function layout({ file, title, description, body, current = file, extraHead = '' }) {
-  const fullTitle = file === 'index.html' ? `${site.nom} | Moquette de pierre, terrasses et allées dans le Nord` : `${title} | ${site.nom}`;
+function layout({ file, title, description, body, current = file, extraHead = '', image, crumbs, noindex = false }) {
+  const fullTitle = file === 'index.html' ? `Moquette de pierre dans le Nord | ${site.nom}` : `${title} | ${site.nom}`;
+  if (noindex) noindexPages.add(file);
+  const url = site.url + (file === 'index.html' ? '' : file);
+  const ogImage = image || site.url + 'img/partage.jpg';
   const menu = nav.map(([href, label]) => `<li><a href="${href}"${href === current ? ' aria-current="page"' : ''}>${label}</a></li>`).join('');
   return `<!doctype html>
 <html lang="fr">
@@ -75,25 +101,27 @@ function layout({ file, title, description, body, current = file, extraHead = ''
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(fullTitle)}</title>
 <meta name="description" content="${esc(description || site.description)}">
-${site.preversion ? '<meta name="robots" content="noindex,nofollow">\n' : ''}<link rel="canonical" href="${site.url}${file === 'index.html' ? '' : file}">
-<meta property="og:type" content="website">
+${site.preversion || noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<link rel="canonical" href="${url}">
+${site.googleVerification ? `<meta name="google-site-verification" content="${esc(site.googleVerification)}">\n` : ''}<meta property="og:type" content="website">
+<meta property="og:url" content="${url}">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:site_name" content="${esc(site.nom)}">
 <meta property="og:title" content="${esc(fullTitle)}">
 <meta property="og:description" content="${esc(description || site.description)}">
-<meta property="og:image" content="${site.url}img/partage.jpg">
+<meta property="og:image" content="${esc(ogImage)}">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#11100f">
 <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="preload" href="fonts/playfair-display-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/site.css">
-${extraHead}${file === 'index.html' ? `<script type="application/ld+json">${jsonLd()}</script>\n` : ''}</head>
+${extraHead}${file === 'index.html' ? `<script type="application/ld+json">${jsonLd()}</script>\n` : ''}${crumbs ? `<script type="application/ld+json">${breadcrumbLd(crumbs)}</script>\n` : ''}</head>
 <body>
 <a class="skip" href="#contenu">Aller au contenu</a>
 ${site.preversion ? '<div class="preview-bar">Préversion de travail : textes et photos à valider, site non référencé.</div>\n' : ''}<header class="site-header">
   <a class="brand-image" href="index.html" aria-label="${esc(site.nom)}, accueil">${site.logo ? pic(site.logo, 'Logo ' + site.nom, { eager: true, sizes: '420px' }) : pic('logo-320', 'Logo ' + site.nom, { cls: '', eager: true }).replace('img/logo-320.webp"', 'img/logo-320.webp 320w, img/logo-640.webp 640w" sizes="420px"').replace('src="img/logo-320.jpg"', 'src="img/logo-640.jpg"')}</a>
-  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu"><span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span><span class="menu-label">Menu</span></button>
+  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Menu"><span class="menu-bars" aria-hidden="true"><span></span><span></span><span></span></span><span class="menu-label">Menu</span></button>
   <nav class="site-menu" id="site-menu" aria-label="Menu principal" hidden><ul>${menu}<li class="menu-cta"><a href="projet.html"${current === 'projet.html' ? ' aria-current="page"' : ''}>Créez votre projet</a></li></ul></nav>
 </header>
 <main id="contenu">
@@ -198,7 +226,7 @@ pages['index.html'] = layout({
     <a class="hero-tab" href="projet.html"><span class="hero-tab-mark" aria-hidden="true">⌂</span><span>Créez votre projet</span></a>
   </nav>
 </section>
-<section class="signature"><span class="eyebrow">Nataliia Résine</span><p>${esc(site.accroche[0])}<br><em>${esc(site.accroche[1])}</em></p></section>
+<section class="signature"><h1 class="eyebrow signature-h1">Moquette de pierre à ${esc(site.zone.slice(0, 3).join(', '))} et dans le Nord</h1><p>${esc(site.accroche[0])}<br><em>${esc(site.accroche[1])}</em></p></section>
 
 <section class="section section-alt">
   <div class="section-head"><span class="eyebrow">Nos savoir-faire</span><h2>Moquette de pierre, dedans comme dehors</h2>
@@ -235,8 +263,8 @@ ${cta('Voyez votre extérieur autrement', 'Envoyez une photo de votre terrasse o
 // Prestations
 pages['prestations.html'] = layout({
   file: 'prestations.html',
-  title: 'Prestations',
-  description: 'Terrasses, allées, escaliers, abords de piscine, balcons, plages de garage, intérieur et rénovation en moquette de pierre, autour de ' + site.zoneTexte + '.',
+  title: 'Terrasses et allées en moquette de pierre',
+  description: `Pose de moquette de pierre (granulats de marbre et résine) : terrasses, allées, escaliers, abords de piscine, balcons, garages. ${site.zoneTexte}.`,
   body: `${pageHead('Nos savoir-faire', 'Prestations', 'Des aménagements qui allient esthétique, confort et caractère.')}
 <section class="section" style="padding-top:0">
   <div class="grid grid-2">${prestations.map((p, i) => `<article class="card" id="${p.id}">
@@ -257,8 +285,8 @@ ${cta()}`,
 const typesPresents = [...new Set(realisations.map((r) => r.type))];
 pages['realisations.html'] = layout({
   file: 'realisations.html',
-  title: 'Réalisations',
-  description: 'Chantiers réalisés en moquette de pierre : photos avant et après, granulats utilisés.',
+  title: 'Réalisations moquette de pierre, avant / après',
+  description: `Chantiers de moquette de pierre réalisés autour de ${site.zone.slice(0, 3).join(', ')} : photos avant et après, granulats utilisés.`,
   body: `${pageHead('En images', 'Réalisations', 'Des chantiers réels, photographiés avant et après, avec les produits utilisés.')}
 <section class="section" style="padding-top:0">
   ${realisations.length ? `<div class="filters" role="group" aria-label="Filtrer par type">
@@ -286,6 +314,8 @@ for (const r of realisations) {
   </div>` : '';
   pages[`realisation-${r.id}.html`] = layout({
     file: `realisation-${r.id}.html`,
+    crumbs: [['Réalisations', 'realisations.html'], [r.titre, `realisation-${r.id}.html`]],
+    image: r.apres?.[0]?.path ? mediaUrl(r.apres[0].path) : undefined,
     current: 'realisations.html',
     title: r.titre,
     description: `${typeLabel[r.type] || ''} en moquette de pierre${r.ville ? ' à ' + r.ville : ''} : photos avant et après.`,
@@ -302,8 +332,8 @@ ${cta()}`,
 // Produits
 pages['produits.html'] = layout({
   file: 'produits.html',
-  title: 'Produits',
-  description: 'Les granulats de marbre et profils de finition utilisés pour les revêtements en moquette de pierre.',
+  title: 'Granulats de marbre et profils de finition',
+  description: 'Les granulats de marbre, profils de finition et produits utilisés pour les revêtements en moquette de pierre de Nataliia Résine.',
   body: `${pageHead('Notre sélection', 'Produits', 'Les matériaux et accessoires utilisés sur les chantiers, pour des réalisations soignées. Ils ne sont pas vendus séparément.')}
 ${categories.filter((c) => c.id !== 'autre' || produits.some((p) => p.categorie === 'autre')).map((c, i) => {
     const list = produits.filter((p) => p.categorie === c.id);
@@ -323,6 +353,9 @@ for (const p of produits) {
   ].filter(([, v]) => v);
   pages[`produit-${p.id}.html`] = layout({
     file: `produit-${p.id}.html`,
+    crumbs: [['Produits', 'produits.html'], [p.nom, `produit-${p.id}.html`]],
+    image: p.photos?.[0]?.path ? mediaUrl(p.photos[0].path) : undefined,
+    noindex: !!p.exemple, // produit de démonstration : pas dans Google
     current: 'produits.html',
     title: p.nom,
     description: p.descriptif || `${p.nom}, ${cat?.titre || ''}.`,
@@ -360,8 +393,8 @@ ${cta()}`,
 // Contact
 pages['contact.html'] = layout({
   file: 'contact.html',
-  title: 'Contact',
-  description: 'Contactez Nataliia Résine par téléphone, WhatsApp ou e-mail pour un devis de moquette de pierre.',
+  title: 'Contact et devis moquette de pierre',
+  description: `Devis moquette de pierre : appelez, écrivez sur WhatsApp ou par e-mail. Intervention à ${site.zoneTexte}.`,
   body: `${pageHead('Un projet en tête ?', 'Contact', 'Une question, un devis ou besoin d’un conseil ? Contactez-moi directement.')}
 <section class="section" style="padding-top:0">
   <div class="contact-list">
@@ -388,8 +421,8 @@ const simData = {
 };
 pages['projet.html'] = layout({
   file: 'projet.html',
-  title: 'Créez votre projet',
-  description: 'Essayez nos granulats sur la photo de votre terrasse ou de votre allée, comparez avant et après, puis envoyez votre projet.',
+  title: 'Simulateur moquette de pierre sur votre photo',
+  description: 'Simulateur gratuit : prenez votre terrasse ou votre allée en photo, essayez nos granulats de marbre, comparez avant et après, puis demandez votre devis.',
   extraHead: (simData.turnstile ? '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>\n' : '')
     + `<script type="application/json" id="sim-data">${JSON.stringify(simData).replace(/</g, '\\u003c')}</script>\n<script type="module" src="js/simulateur.js"></script>\n`,
   body: `${pageHead('Votre extérieur, votre style', 'Créez votre projet', 'Prenez en photo votre terrasse, votre allée ou votre escalier, choisissez un granulat et voyez le résultat sur votre propre photo.')}
@@ -494,6 +527,7 @@ pages['projet.html'] = layout({
 const L = site.legal;
 pages['mentions-legales.html'] = layout({
   file: 'mentions-legales.html',
+  noindex: true,
   title: 'Mentions légales',
   body: `${pageHead('Informations', 'Mentions légales', '')}
 <section class="section prose" style="padding-top:0">
@@ -522,6 +556,7 @@ pages['mentions-legales.html'] = layout({
 // Confidentialité
 pages['confidentialite.html'] = layout({
   file: 'confidentialite.html',
+  noindex: true,
   title: 'Politique de confidentialité',
   body: `${pageHead('Vos données', 'Politique de confidentialité', '')}
 <section class="section prose" style="padding-top:0">
@@ -573,8 +608,9 @@ for (const [f, html] of Object.entries(pages)) writeFileSync(join(OUT, f), html)
 const base = new URL(site.url).pathname;
 writeFileSync(join(OUT, '404.html'), pages['404.html'].replace(/(href|src|srcset|imagesrcset)="(?!https?:|mailto:|tel:|#|\/)([^"]+)"/g, (m, a, v) => `${a}="${v.split(', ').map((s) => base + s).join(', ')}"`));
 
-const indexable = Object.keys(pages).filter((f) => f !== '404.html');
-writeFileSync(join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${indexable.map((f) => `  <url><loc>${site.url}${f === 'index.html' ? '' : f}</loc></url>`).join('\n')}\n</urlset>\n`);
+const indexable = Object.keys(pages).filter((f) => !noindexPages.has(f));
+const today = new Date().toISOString().slice(0, 10);
+writeFileSync(join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${indexable.map((f) => `  <url><loc>${site.url}${f === 'index.html' ? '' : f}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n`);
 writeFileSync(join(OUT, 'robots.txt'), site.preversion ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nSitemap: ${site.url}sitemap.xml\n`);
 writeFileSync(join(OUT, '.nojekyll'), '');
 

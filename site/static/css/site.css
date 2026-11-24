@@ -7,8 +7,8 @@
 @font-face{font-family:"Playfair Display";font-weight:600;font-style:normal;font-display:swap;src:url("../fonts/playfair-display-latin-600-normal.woff2") format("woff2")}
 
 :root{
-  --ink:#292722;--paper:#f7f4ee;--paper-2:#eee7db;--muted:#6f695f;
-  --accent:#b58a50;--accent-dark:#8d6739;--gold-light:#d2b27b;
+  --ink:#292722;--paper:#f7f4ee;--paper-2:#eee7db;--muted:#5f5a51;
+  --accent:#b58a50;--accent-dark:#7a5830;--gold-light:#d2b27b;
   --line:#e5ddd0;--white:#fffefa;--black:#11100f;--black-2:#1a1714;
   --serif:"Playfair Display",Georgia,serif;--sans:"DM Sans",Arial,sans-serif;
   --gutter:clamp(16px,6vw,96px);--max:1180px;
@@ -240,3 +240,4 @@ body.sim-no-scroll{overflow:hidden}
 .sim-full .sim-lead{background:#2a241c;color:#f3e6cc}
 .sim-status{margin:0 0 8px;font-size:14px;color:#5b4a33;min-height:1.2em}
 .sim-full .sim-status{color:#e8dcc6}
+.signature-h1{font-family:var(--sans);font-size:11px;line-height:1.5;letter-spacing:.2em;font-weight:700;text-transform:uppercase;color:var(--accent-dark);margin:0}
