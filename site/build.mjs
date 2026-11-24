@@ -81,6 +81,8 @@ const jsonLd = () => JSON.stringify([
   },
   { '@context': 'https://schema.org', '@type': 'WebSite', name: site.nom, url: site.url, inLanguage: 'fr-FR', publisher: { '@id': site.url + '#entreprise' } },
 ]);
+// Chat : webhook n8n (vide = mode démonstration). Voir n8n/README.md
+const chatConfig = { webhook: site.chatWebhook || '', zone: site.zoneTexte, telephone: site.contact.telephone, telephoneLien: site.contact.telephoneLien };
 const breadcrumbLd = (crumbs) => JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
@@ -117,7 +119,7 @@ ${site.googleVerification ? `<meta name="google-site-verification" content="${es
 <link rel="preload" href="fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/site.css">
 ${extraHead}${file === 'index.html' ? `<script type="application/ld+json">${jsonLd()}</script>\n` : ''}${crumbs ? `<script type="application/ld+json">${breadcrumbLd(crumbs)}</script>\n` : ''}</head>
-<body>
+<body data-page="${file.replace('.html', '')}">
 <a class="skip" href="#contenu">Aller au contenu</a>
 ${site.preversion ? '<div class="preview-bar">Préversion de travail : textes et photos à valider, site non référencé.</div>\n' : ''}<header class="site-header">
   <a class="brand-image" href="index.html" aria-label="${esc(site.nom)}, accueil">${site.logo ? pic(site.logo, 'Logo ' + site.nom, { eager: true, sizes: '420px' }) : pic('logo-320', 'Logo ' + site.nom, { cls: '', eager: true }).replace('img/logo-320.webp"', 'img/logo-320.webp 320w, img/logo-640.webp 640w" sizes="420px"').replace('src="img/logo-320.jpg"', 'src="img/logo-640.jpg"')}</a>
@@ -157,6 +159,7 @@ ${body}
   </div>
 </footer>
 <script src="js/site.js" defer></script>
+${file === '404.html' ? '' : `<script>window.NR_CHAT=${JSON.stringify(chatConfig)};</script>\n<script src="js/chat.js" defer></script>`}
 </body>
 </html>
 `;
@@ -576,7 +579,9 @@ pages['confidentialite.html'] = layout({
     <li>Cloudflare Turnstile (protection anti-robot du formulaire, sans cookie publicitaire) ;</li>
     <li>GitHub (hébergement des pages du site).</li>
   </ul>
-  <h2>Durée de conservation</h2>
+  ${site.chatWebhook ? `<h2>Assistant en ligne (chat)</h2>
+  <p>Les messages échangés avec l’assistant sont traités par l’outil d’automatisation n8n et par le service d’intelligence artificielle qui rédige les réponses. Ils servent à répondre à vos questions et, si vous laissez vos coordonnées, à transmettre votre demande à Nataliia Résine par e-mail. Ne communiquez pas d’informations sensibles dans le chat.</p>
+  ` : ''}<h2>Durée de conservation</h2>
   <p>Les demandes, photos et simulations d’une personne qui n’est pas devenue cliente sont supprimées automatiquement 3 ans après le dernier échange.</p>
   <h2>Vos droits</h2>
   <p>Vous pouvez demander l’accès à vos données, leur rectification ou leur suppression en écrivant à <a href="mailto:${site.contact.email}">${site.contact.email}</a>. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
@@ -590,6 +595,57 @@ pages['404.html'] = layout({
   body: `${pageHead('Erreur 404', 'Page introuvable', 'Cette page n’existe pas ou a été déplacée.')}
 <section class="section" style="padding-top:0"><a class="btn" href="index.html">Retour à l’accueil</a></section>`,
 });
+
+// Connaissance du chat (lue par l'agent n8n et par le mode démonstration). Seule source de vérité :
+// les contenus du site. Mise à jour à chaque publication depuis l'administration.
+function chatConnaissance() {
+  const u = (f) => site.url + f;
+  const prods = produits.map((p) => ({
+    nom: p.nom, categorie: (categories.find((c) => c.id === p.categorie) || {}).titre || p.categorie,
+    descriptif: p.descriptif || '', exemple: !!p.exemple, simulable: !!p.texture, grain_mm: p.grainMm || null,
+    page: u(`produit-${p.id}.html`),
+  }));
+  const reals = realisations.map((r) => ({
+    titre: r.titre, prestation: typeLabel[r.type] || r.type, ville: r.ville || null, texte: r.texte || '',
+    produits: (r.produits || []).map((id) => produitById[id]?.nom).filter(Boolean), page: u(`realisation-${r.id}.html`),
+  }));
+  const vrais = prods.filter((p) => !p.exemple);
+  const faq = [
+    { question: 'Vous faites quoi ?', reponse: `Nataliia Résine pose des revêtements en moquette de pierre (granulats de marbre et résine) : ${prestations.map((p) => p.titre.toLowerCase()).join(', ')}.`, lien: { texte: 'Les prestations', url: 'prestations.html' }, mots_cles: ['quoi', 'faites', 'prestations', 'services', 'métier', 'metier', 'moquette', 'résine', 'resine', 'entreprise', 'qui êtes', 'qui etes'] },
+    { question: 'Vous intervenez où ?', reponse: `Nataliia intervient à ${site.zoneTexte}. Un peu plus loin ? Appelez, on en parle.`, mots_cles: ['où', 'ou intervenez', 'zone', 'secteur', 'ville', 'déplacez', 'deplacez', 'loin', 'km', ...site.zone], priorite: 2 },
+    { question: 'Combien ça coûte ?', reponse: 'Le prix dépend de la surface, de l’état du support et du granulat choisi : il est établi sur devis gratuit, après visite. Le chat ne donne pas de prix.', lien: { texte: 'Demander un devis', url: 'contact.html' }, mots_cles: ['prix', 'coût', 'cout', 'coûte', 'coute', 'tarif', 'combien', 'm2', 'm²', 'devis', 'budget', 'cher'], priorite: 3 },
+    { question: 'Quels granulats ?', reponse: vrais.length ? `Granulats et produits utilisés : ${vrais.map((p) => p.nom).join(', ')}. Vous pouvez les essayer sur une photo de votre extérieur avec le simulateur.` : 'Les références de granulats arrivent bientôt sur le site. Vous pouvez déjà essayer le simulateur avec des granulats d’exemple.', lien: { texte: 'Les produits', url: 'produits.html' }, mots_cles: ['granulat', 'granulats', 'marbre', 'couleur', 'couleurs', 'teinte', 'produit', 'produits', 'nuancier', 'profil'] },
+    { question: 'Vous vendez les produits ?', reponse: 'Non, les produits ne sont pas vendus séparément : ce sont ceux utilisés sur les chantiers de Nataliia.', mots_cles: ['vendez', 'vendre', 'acheter', 'achat', 'vente', 'livraison', 'commander'], priorite: 3 },
+    { question: 'Voir des chantiers', reponse: reals.length ? `Quelques chantiers : ${reals.slice(0, 4).map((r) => r.titre + (r.ville ? ' (' + r.ville + ')' : '')).join(', ')}.` : 'Les premières réalisations seront publiées très bientôt sur le site.', lien: { texte: 'Les réalisations', url: 'realisations.html' }, mots_cles: ['chantier', 'chantiers', 'réalisation', 'réalisations', 'realisation', 'photos', 'exemples', 'avant', 'après'] },
+    { question: 'Le simulateur', reponse: 'Le simulateur vous permet de voir un granulat posé sur la photo de votre terrasse ou de votre allée, avant/après, puis d’envoyer votre projet.', lien: { texte: 'Essayer le simulateur', url: 'projet.html' }, mots_cles: ['simul', 'simulateur', 'photo', 'essayer', 'voir le rendu', 'aperçu', 'apercu', 'visualiser'] },
+    { question: 'Comment se passe un chantier ?', reponse: etapes.map(([t], i) => `${i + 1}. ${t}`).join(' · ') + '. Le délai avant usage est précisé au devis selon la météo.', mots_cles: ['étapes', 'etapes', 'déroul', 'deroul', 'pose', 'poser', 'chantier se passe', 'durée', 'duree', 'temps', 'combien de temps', 'séchage', 'sechage'] },
+    { question: 'Les avantages', reponse: avantages.map(([t, d]) => `${t} : ${d}`).join(' '), mots_cles: ['avantage', 'avantages', 'pourquoi', 'drainant', 'drainante', 'glisse', 'antidérapant', 'antiderapant', 'entretien', 'pieds nus'] },
+    { question: 'Contact', reponse: `Téléphone ${site.contact.telephone}, WhatsApp, ou e-mail ${site.contact.email}. Le devis est gratuit.`, lien: { texte: 'Page Contact', url: 'contact.html' }, mots_cles: ['contact', 'téléphone', 'telephone', 'appeler', 'mail', 'joindre', 'whatsapp', 'rappeler', 'rendez-vous', 'visite'] },
+    ...prestations.map((p) => ({ question: p.titre, reponse: `${p.resume} ${p.texte}`, lien: { texte: 'En savoir plus', url: `prestations.html#${p.id}` }, mots_cles: [p.titre.toLowerCase(), ...p.titre.toLowerCase().split(/[^a-zàâäéèêëîïôöùûüç]+/).filter((w) => w.length > 4).map((w) => w.replace(/s$/, ''))] })),
+  ];
+  return {
+    _note: 'Généré par site/build.mjs à chaque publication. Ne pas modifier à la main : modifier les contenus dans l’administration.',
+    genere_le: new Date().toISOString(),
+    entreprise: {
+      nom: site.nom, prenom: 'Nataliia', activite: 'Pose de revêtements en moquette de pierre (granulats de marbre et résine), dedans comme dehors',
+      zone: site.zone, zone_texte: site.zoneTexte, telephone: site.contact.telephone, whatsapp: site.contact.whatsapp, email: site.contact.email,
+      pages: { site: site.url, prestations: u('prestations.html'), realisations: u('realisations.html'), produits: u('produits.html'), contact: u('contact.html'), simulateur: u('projet.html') },
+    },
+    regles: {
+      prix: 'Jamais de prix ni de fourchette : devis gratuit après visite.',
+      vente: 'Les produits ne sont pas vendus séparément.',
+      garantie: 'Ne pas parler de garantie décennale ni d’assurance (non annoncées sur le site).',
+      delais: 'Pas de délai garanti : le délai avant usage est précisé au devis selon la météo.',
+      produits_exemple: 'Les produits marqués exemple sont des démonstrations : ne pas les présenter comme de vrais produits.',
+    },
+    prestations: prestations.map((p) => ({ titre: p.titre, resume: p.resume, texte: p.texte, page: u(`prestations.html#${p.id}`) })),
+    deroule_chantier: etapes.map(([titre, texte]) => ({ titre, texte })),
+    avantages: avantages.map(([titre, texte]) => ({ titre, texte })),
+    produits: prods,
+    realisations: reals,
+    faq,
+  };
+}
 
 // Écriture
 if (existsSync(OUT)) rmSync(OUT, { recursive: true });
@@ -611,6 +667,7 @@ writeFileSync(join(OUT, '404.html'), pages['404.html'].replace(/(href|src|srcset
 const indexable = Object.keys(pages).filter((f) => !noindexPages.has(f));
 const today = new Date().toISOString().slice(0, 10);
 writeFileSync(join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${indexable.map((f) => `  <url><loc>${site.url}${f === 'index.html' ? '' : f}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n`);
+writeFileSync(join(OUT, 'chat-connaissance.json'), JSON.stringify(chatConnaissance(), null, 1));
 writeFileSync(join(OUT, 'robots.txt'), site.preversion ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nSitemap: ${site.url}sitemap.xml\n`);
 writeFileSync(join(OUT, '.nojekyll'), '');
 

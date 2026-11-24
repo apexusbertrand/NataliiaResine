@@ -35,5 +35,6 @@
     }
   },
   "googleVerification": "",
-  "reseaux": []
+  "reseaux": [],
+  "chatWebhook": ""
 }
