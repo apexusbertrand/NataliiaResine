@@ -34,6 +34,20 @@ Execute Workflow Trigger → lecture de la conversation dans `chat_nataliia` (m�
 
 Schedule Trigger 18 h → lecture de `chat_nataliia` pour la journée → regroupement par `sessionId` → un seul mail récapitulatif (pas de mail si aucune conversation).
 
+## Flux en service (24/11/2026)
+
+| Flux | Lien n8n | État |
+|---|---|---|
+| Site Nataliia Résine — Agent Chat | https://apexus.app.n8n.cloud/workflow/6QOc1NgkFLEyP01P | publié |
+| Site Nataliia Résine — Récapitulatif du chat (18 h, Europe/Paris) | https://apexus.app.n8n.cloud/workflow/o7cCXtum9Zgv2Oqe | publié |
+
+Table des échanges : `chat_nataliia` (id D1MDCfrt04DGyJ55), séparée de celle de LOGE&NERJ.
+Webhook du chat (dans `site/content/site.json` → `chatWebhook`) : `https://apexus.app.n8n.cloud/webhook/7a6c64e2-c8c6-4a2d-b66a-ae7d31baa1bd/chat`, origine autorisée `https://apexusbertrand.github.io` (à changer avec le nom de domaine).
+Modèle : Claude Sonnet (identifiant n8n « Anthropic account »). Envoi : « Gmail Claude ». La transmission est faite directement par l'outil Gmail de l'agent (`transmettre_a_nataliia`), comme pour LOGE&NERJ : pas de sous-flux.
+Source du flux de l'agent : `n8n/flux-agent-chat.sdk.ts` (adresse de réception masquée).
+
+Tests du 24/11/2026 : question hors sujet + prix (refus poli, pas de prix, demande de coordonnées), projet avec téléphone (fiche envoyée, aucun champ inventé), question de zone par l'adresse de production depuis l'origine du site.
+
 ## Mise en route
 
 1. Réautoriser le connecteur n8n dans claude.ai pour que les flux soient créés et testés directement (comme pour LOGE&NERJ), ou les créer à la main d'après ce document.
