@@ -8,7 +8,22 @@
   const LOGO = '<img src="img/icone-192.png" alt="" width="40" height="40">';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  function n8nChat() {
+  // Bouton d'appel du chat, affiché tout de suite (léger). Le widget n8n (~450 Ko) ne se charge qu'au clic.
+  const FAB = `<button class="chat-fab" type="button" aria-label="Ouvrir le chat : une question ?">${LOGO}<span class="lbl">Une question ?</span><span class="dot" aria-hidden="true"></span></button>`;
+
+  function n8nLauncher() {
+    document.body.insertAdjacentHTML('beforeend', FAB);
+    const fab = document.querySelector('.chat-fab');
+    fab.addEventListener('click', () => {
+      if (fab.disabled) return;
+      fab.disabled = true;
+      fab.querySelector('.lbl').textContent = 'Chargement…';
+      n8nChat(() => fab.remove(), () => { fab.remove(); demoChat(true); });
+    });
+    teaser('.chat-fab');
+  }
+
+  function n8nChat(pret, echec) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = `https://cdn.jsdelivr.net/npm/@n8n/chat@${N8N_CHAT_VERSION}/dist/style.css`;
@@ -23,18 +38,22 @@
         initialMessages: [`Bonjour, je suis l’assistant de Nataliia Résine : moquette de pierre pour terrasses, allées, escaliers et abords de piscine autour de ${CFG.zone}. Posez-moi votre question. Pour un devis gratuit, laissez votre prénom, votre téléphone et votre commune : Nataliia vous recontacte.`],
         i18n: { en: { title: 'Nataliia Résine', subtitle: 'Moquette de pierre · devis gratuit', footer: '', getStarted: 'Nouvelle conversation', inputPlaceholder: 'Votre question…', closeButtonTooltip: 'Fermer' } },
       });
-      teaser('#n8n-chat .chat-window-toggle');
-      fermeture();
-    }).catch(() => demoChat()); // CDN injoignable : on garde au moins le mode démonstration
+      fermeture(true);
+      pret();
+    }).catch(() => echec()); // CDN injoignable : on garde au moins le mode démonstration
   }
 
   // Croix dans l'en-tête et bouton rond qui devient une croix quand le chat est ouvert
-  function fermeture() {
+  function fermeture(ouvrir) {
     const racine = document.getElementById('n8n-chat');
     const attendre = (essais) => {
       const toggle = racine && racine.querySelector('.chat-window-toggle');
       if (!toggle) { if (essais > 0) setTimeout(() => attendre(essais - 1), 300); return; }
+      toggle.setAttribute('role', 'button');
+      toggle.setAttribute('tabindex', '0');
       toggle.setAttribute('aria-label', 'Ouvrir le chat');
+      toggle.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); } });
+      if (ouvrir) setTimeout(() => toggle.click(), 50);
       const maj = () => {
         const fen = racine.querySelector('.chat-window');
         const ouvert = !!(fen && fen.offsetParent !== null && getComputedStyle(fen).display !== 'none');
@@ -90,12 +109,12 @@
   }
 
   // Mode démonstration : réponses par mots-clés à partir de la connaissance publiée par le site
-  function demoChat() {
+  function demoChat(ouvrirTout) {
     let faq = [];
     fetch('chat-connaissance.json').then((r) => r.json()).then((d) => { faq = d.faq || []; }).catch(() => {});
 
     document.body.insertAdjacentHTML('beforeend', `
-      <button class="chat-fab" type="button" aria-controls="chat" aria-expanded="false" aria-label="Ouvrir le chat : une question ?">${LOGO}<span class="lbl">Une question ?</span><span class="dot" aria-hidden="true"></span></button>
+      ${FAB}
       <section class="chat" id="chat" aria-label="Discuter avec l’assistant">
         <div class="chat-hd">${LOGO}<div><strong>Assistant Nataliia Résine</strong><span>Moquette de pierre · devis gratuit</span></div><button type="button" class="chat-x" aria-label="Fermer le chat">×</button></div>
         <div class="chat-log" aria-live="polite"></div>
@@ -143,9 +162,11 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && box.classList.contains('open')) toggle(false); });
     box.querySelector('.quick').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') ask(e.target.textContent); });
     form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value); input.value = ''; });
-    teaser('.chat-fab');
+    fab.setAttribute('aria-controls', 'chat');
+    fab.setAttribute('aria-expanded', 'false');
+    if (ouvrirTout) toggle(true); else teaser('.chat-fab');
   }
 
-  const start = () => (CFG.webhook ? n8nChat() : demoChat());
+  const start = () => (CFG.webhook ? n8nLauncher() : demoChat());
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

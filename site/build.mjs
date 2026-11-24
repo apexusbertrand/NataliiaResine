@@ -231,6 +231,24 @@ pages['index.html'] = layout({
 </section>
 <section class="signature"><h1 class="eyebrow signature-h1">Moquette de pierre à ${esc(site.zone.slice(0, 3).join(', '))} et dans le Nord</h1><p>${esc(site.accroche[0])}<br><em>${esc(site.accroche[1])}</em></p></section>
 
+<section class="section transfo" aria-labelledby="transfo-titre">
+  <div class="transfo-grid">
+    <figure class="transfo-media">
+      <video class="transfo-video" muted loop playsinline preload="none" poster="video/transformation-debut.jpg" width="358" height="356" aria-describedby="transfo-legende">
+        <source src="video/transformation.webm" type="video/webm">
+        <source src="video/transformation.mp4" type="video/mp4">
+      </video>
+      <figcaption id="transfo-legende">D’une terrasse en dalles abîmées à une moquette de pierre : nettoyage, préparation du support, pose, résultat.</figcaption>
+    </figure>
+    <div>
+      <span class="eyebrow">Avant / après</span>
+      <h2 id="transfo-titre">La terrasse comme neuve</h2>
+      <p class="lead">Dalles ternies, mousse, herbes entre les joints : après nettoyage et préparation du support, la moquette de pierre recouvre l’existant et donne un sol continu, drainant et lumineux.</p>
+      <div class="actions"><a class="btn" href="projet.html">Essayez sur votre photo <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="prestations.html#renovation">La rénovation</a></div>
+    </div>
+  </div>
+</section>
+
 <section class="section section-alt">
   <div class="section-head"><span class="eyebrow">Nos savoir-faire</span><h2>Moquette de pierre, dedans comme dehors</h2>
   <p class="lead">Granulats de marbre et résine pour terrasses, allées, escaliers, abords de piscine et bien d’autres surfaces.</p></div>
