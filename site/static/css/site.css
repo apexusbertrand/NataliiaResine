@@ -321,3 +321,6 @@ body.sim-no-scroll{overflow:hidden}
 .transfo-video{display:block;width:100%;height:auto;aspect-ratio:358/356;border:1px solid var(--accent);background:var(--black);box-shadow:0 16px 36px rgba(0,0,0,.16)}
 .transfo-media figcaption{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
 .transfo h2{font-size:clamp(32px,4vw,50px);margin-top:12px}
+/* Simulateur : bouton du chat réduit à son rond, pour ne pas couvrir la photo */
+body[data-page="projet"] .chat-fab{padding:5px}
+body[data-page="projet"] .chat-fab .lbl,body[data-page="projet"] .chat-fab .dot{display:none}
