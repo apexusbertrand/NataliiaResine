@@ -1,7 +1,7 @@
 import { workflow, node, trigger, sticky, languageModel, memory, tool, fromAi, expr } from '@n8n/workflow-sdk';
 
 // Flux « Site Nataliia Résine — Agent Chat » (créé dans n8n par l'outil MCP, ce fichier en est la source).
-// Même structure que le flux LOGE&NERJ, entièrement séparé : table chat_nataliia, connaissance du site Nataliia.
+// Flux indépendant : table chat_nataliia, connaissance publiée par le site Nataliia Résine.
 
 const chat = trigger({
   type: '@n8n/n8n-nodes-langchain.chatTrigger',

@@ -1,4 +1,4 @@
-/* Chat du site Nataliia Résine (même principe que le site LOGE&NERJ).
+/* Chat du site Nataliia Résine.
    - window.NR_CHAT.webhook vide : mode démonstration, réponses tirées de chat-connaissance.json
      par mots-clés (rien n'est envoyé).
    - webhook renseigné : widget @n8n/chat (version figée) relié au flux n8n « Site Nataliia Résine — Agent Chat ». */

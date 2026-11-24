@@ -242,7 +242,7 @@ body.sim-no-scroll{overflow:hidden}
 .sim-full .sim-status{color:#e8dcc6}
 .signature-h1{font-family:var(--sans);font-size:11px;line-height:1.5;letter-spacing:.2em;font-weight:700;text-transform:uppercase;color:var(--accent-dark);margin:0}
 
-/* ---------- Chat (même principe que LOGE&NERJ), aux couleurs Nataliia Résine ---------- */
+/* ---------- Chat du site, aux couleurs Nataliia Résine ---------- */
 .chat-fab{position:fixed;right:18px;bottom:18px;z-index:58;display:flex;align-items:center;gap:10px;background:var(--black);color:var(--gold-light);border:2px solid var(--accent);border-radius:999px;padding:6px 18px 6px 6px;cursor:pointer;font:600 14px var(--sans);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 10px 26px rgba(0,0,0,.28);transition:transform .2s}
 .chat-fab:hover{transform:translateY(-2px)}
 .chat-fab img{width:40px;height:40px;border-radius:50%}
