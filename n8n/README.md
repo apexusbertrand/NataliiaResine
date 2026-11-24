@@ -26,7 +26,7 @@ Le chat du site (bouton en bas à droite de chaque page) est un widget `@n8n/cha
 Chat Trigger (public, origine autorisée `https://apexusbertrand.github.io`) → « Lire la connaissance du site » (HTTP) → « Assistant Nataliia Résine » (AI Agent : Claude Sonnet, mémoire de session de 20 messages, outil `transmettre_a_nataliia`) → « Archiver l'échange » (table `chat_nataliia`) → « Réponse au visiteur ».
 
 Règles du prompt (source complète : `n8n/flux-agent-chat.sdk.ts`) :
-- sujets autorisés : moquette de pierre, prestations, produits, chantiers, zone, déroulé, simulateur, contact ; le reste est refusé poliment ;
+- sujets autorisés : moquette de pierre, prestations, produits, chantiers, zone, déroulé, simulateur, contact, et Apexus (concepteur du site, création de sites web dynamiques, lien https://apexus.fr) en sujet secondaire ; le reste est refusé poliment ;
 - jamais de prix, de délai garanti, de garantie décennale ; produits d'exemple jamais présentés comme réels ;
 - récupération progressive : prénom, téléphone ou e-mail, commune, type de surface, m², sol actuel, délai, granulat envisagé ;
 - dès qu'il a un téléphone ou un e-mail, l'outil `transmettre_a_nataliia` envoie la fiche : objet `Demande chat · <commune> · <surface>`, synthèse, tableau des champs connus (aucun inventé), conversation complète.

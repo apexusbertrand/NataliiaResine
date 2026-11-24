@@ -294,9 +294,12 @@ body.sim-no-scroll{overflow:hidden}
 #n8n-chat .chat-header h1{font-family:"Playfair Display",Georgia,serif!important;font-weight:500!important;font-size:21px!important;margin:0!important}
 #n8n-chat .chat-header p{font-size:12px!important;letter-spacing:.06em;text-transform:uppercase;color:#d2b27b;margin:2px 0 0!important}
 #n8n-chat .chat-close{position:absolute;top:50%;right:14px;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:1px solid #b58a50;background:transparent;color:#d2b27b;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 0 2px}
-@media(max-width:700px){
-  #n8n-chat,#n8n-chat .n8n-chat{--chat--window--width:calc(100vw - 24px);--chat--window--height:min(520px,calc(100dvh - 200px))}
-  #n8n-chat .chat-window-wrapper{right:12px!important;bottom:12px!important}
+/* Mobile (y compris « version pour ordinateur » : on se fie au tactile, pas à la largeur) : chat quasi plein écran */
+@media(max-width:700px),(hover:none) and (pointer:coarse){
+  #n8n-chat,#n8n-chat .n8n-chat{--chat--window--width:calc(100vw - 16px);--chat--window--height:calc(100dvh - 104px);--chat--border-radius:12px}
+  #n8n-chat .chat-window-wrapper{right:8px!important;bottom:8px!important;max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 16px)!important}
+  #n8n-chat .chat-window{margin-bottom:8px!important}
+  .chat{left:8px;right:8px;bottom:8px;width:auto;height:calc(100dvh - 16px)}
 }
 
 /* Bulle d'annonce au-dessus du bouton */
