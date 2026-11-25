@@ -234,16 +234,16 @@ pages['index.html'] = layout({
 <section class="section transfo" aria-labelledby="transfo-titre">
   <div class="transfo-grid">
     <figure class="transfo-media">
-      <video class="transfo-video" muted loop playsinline preload="none" poster="video/transformation-debut.jpg" width="358" height="356" aria-describedby="transfo-legende">
+      <video class="transfo-video" muted loop playsinline preload="none" poster="video/transformation-debut.jpg" width="380" height="336" aria-describedby="transfo-legende">
         <source src="video/transformation.webm" type="video/webm">
         <source src="video/transformation.mp4" type="video/mp4">
       </video>
-      <figcaption id="transfo-legende">D’une terrasse en dalles abîmées à une moquette de pierre : nettoyage, préparation du support, pose, résultat.</figcaption>
+      <figcaption id="transfo-legende">D’un sol envahi de feuilles et d’herbes à une moquette de pierre : nettoyage, préparation et compactage du support, mise à niveau, pose des granulats, lissage, résultat.</figcaption>
     </figure>
     <div>
       <span class="eyebrow">Avant / après</span>
-      <h2 id="transfo-titre">La terrasse comme neuve</h2>
-      <p class="lead">Dalles ternies, mousse, herbes entre les joints : après nettoyage et préparation du support, la moquette de pierre recouvre l’existant et donne un sol continu, drainant et lumineux.</p>
+      <h2 id="transfo-titre">La terrasse transformée</h2>
+      <p class="lead">Feuilles mortes, herbes, sol fatigué : après nettoyage, préparation et mise à niveau du support, la moquette de pierre est posée et lissée pour donner un sol continu, drainant et lumineux.</p>
       <div class="actions"><a class="btn" href="projet.html">Essayez sur votre photo <span aria-hidden="true">↗</span></a><a class="btn btn-ghost" href="prestations.html#renovation">La rénovation</a></div>
     </div>
   </div>

@@ -321,7 +321,7 @@ body.sim-no-scroll{overflow:hidden}
 .transfo-grid{display:grid;gap:clamp(24px,4vw,56px);grid-template-columns:minmax(0,380px) 1fr;align-items:center;max-width:var(--max);margin:0 auto}
 @media(max-width:760px){.transfo-grid{grid-template-columns:1fr}.transfo-media{max-width:380px;margin:0 auto}}
 .transfo-media{margin:0}
-.transfo-video{display:block;width:100%;height:auto;aspect-ratio:358/356;border:1px solid var(--accent);background:var(--black);box-shadow:0 16px 36px rgba(0,0,0,.16)}
+.transfo-video{display:block;width:100%;height:auto;aspect-ratio:380/336;border:1px solid var(--accent);background:var(--black);box-shadow:0 16px 36px rgba(0,0,0,.16)}
 .transfo-media figcaption{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
 .transfo h2{font-size:clamp(32px,4vw,50px);margin-top:12px}
 /* Simulateur : bouton du chat réduit à son rond, pour ne pas couvrir la photo */
